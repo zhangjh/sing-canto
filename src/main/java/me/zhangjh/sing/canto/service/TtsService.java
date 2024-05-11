@@ -5,11 +5,12 @@ import com.microsoft.cognitiveservices.speech.*;
 import com.microsoft.cognitiveservices.speech.audio.AudioConfig;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import me.zhangjh.sing.canto.response.EvaluateRes;
-import me.zhangjh.sing.canto.response.EvaluateVO;
+import me.zhangjh.sing.canto.response.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -88,23 +89,24 @@ public class TtsService {
         }
     }
 
-    public EvaluateVO evaluate() {
-        return doEvaluate();
+    public EvaluateVO evaluate(String referText) {
+        return doEvaluate(referText);
     }
-    public EvaluateVO evaluateTest(String filePath) {
+    public EvaluateVO evaluateTest(String filePath, String referText) {
         AudioConfig audioConfig = AudioConfig.fromWavFileInput(filePath);
         speechRecognizer = new SpeechRecognizer(
                 speechConfig,
                 audioConfig);
-        return doEvaluate();
+        return doEvaluate(referText);
     }
 
-    private EvaluateVO doEvaluate() {
+    private EvaluateVO doEvaluate(String referText) {
         try {
-            try (PronunciationAssessmentConfig pronunciationConfig = new PronunciationAssessmentConfig("",
+            try (PronunciationAssessmentConfig pronunciationConfig = new PronunciationAssessmentConfig(referText,
                     PronunciationAssessmentGradingSystem.HundredMark, PronunciationAssessmentGranularity.Phoneme, false)
             ) {
                 pronunciationConfig.enableProsodyAssessment();
+                pronunciationConfig.enableContentAssessmentWithTopic("singing song");
                 pronunciationConfig.applyTo(speechRecognizer);
                 Future<SpeechRecognitionResult> future = speechRecognizer.recognizeOnceAsync();
                 SpeechRecognitionResult speechRecognitionResult = future.get(30, TimeUnit.SECONDS);
@@ -116,22 +118,36 @@ public class TtsService {
                         .getProperty(PropertyId.SpeechServiceResponse_JsonResult);
 
                 EvaluateRes evaluateRes = JSONObject.parseObject(pronunciationAssessmentResultJson, EvaluateRes.class);
-                System.out.println("result: " + JSONObject.toJSONString(evaluateRes));
                 log.info("result: {}", pronunciationAssessmentResultJson);
-                // 准确度
-                System.out.println("accuracy:" + pronResult.getAccuracyScore());
-                // 完整度
-                System.out.println("complete:" + pronResult.getCompletenessScore());
-                // 流畅度
-                System.out.println("fluency:" + pronResult.getFluencyScore());
-                // 总分，发音质量
-                System.out.println("pronu:" + pronResult.getPronunciationScore());
-                // todo: 返回一个等第结果给端，如五星等第判定，20分一个星
+
+                // 返回一个等第结果给端，如五星等第判定
                 EvaluateVO evaluateVO = new EvaluateVO();
                 evaluateVO.setAccuracy(pronResult.getAccuracyScore());
                 evaluateVO.setComplete(pronResult.getCompletenessScore());
                 evaluateVO.setFluency(pronResult.getFluencyScore());
                 evaluateVO.setPronScore(pronResult.getPronunciationScore());
+
+                List<WordEvaluateVO> wordEvaluateVOS = new ArrayList<>();
+                for (Nbest nbest : evaluateRes.getNbest()) {
+                    PronunciationAssessment assessment = nbest.getPronunciationAssessment();
+                    log.info("accuracy: {}", assessment.getAccuracyScore());
+                    log.info("fluency: {}", assessment.getFluencyScore());
+                    log.info("pronScore: {}", assessment.getPronScore());
+                    log.info("complete: {}", assessment.getCompletenessScore());
+                    for (Word word : nbest.getWords()) {
+                        log.info("word: {}", word.getWord());
+                        if (word.getPronunciationAssessment() != null) {
+                            // 输出转为日志
+                            log.info("word accuracy: {}", word.getPronunciationAssessment().getAccuracyScore());
+                            WordEvaluateVO wordEvaluateVO = new WordEvaluateVO();
+                            wordEvaluateVO.setAccuracy(word.getPronunciationAssessment().getAccuracyScore());
+                            wordEvaluateVO.setWord(word.getWord());
+                            wordEvaluateVOS.add(wordEvaluateVO);
+                        }
+                    }
+                }
+                evaluateVO.setWordEvaluates(wordEvaluateVOS);
+                evaluateVO.getStars();
                 return evaluateVO;
             }
         } catch (Exception e) {

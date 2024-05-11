@@ -13,4 +13,7 @@ public class Word {
 
     @JSONField(name = "PronunciationAssessment")
     private PronunciationAssessment pronunciationAssessment;
+
+    @JSONField(name = "Word")
+    private String word;
 }

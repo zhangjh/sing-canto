@@ -20,7 +20,9 @@ class SingCantoApplicationTests {
     public void ttsTest() {
 //        ttsService.playContent("在有生的瞬间能遇到你，竟花光所有运气", "medium");
 
-        EvaluateVO evaluateVO = ttsService.evaluateTest("src/main/resources/歌词.wav");
+        EvaluateVO evaluateVO = ttsService.evaluateTest("src/main/resources/歌词.wav", "在有生的瞬间能遇到你，竟花光所有运气");
         System.out.println(evaluateVO.getStars());
+        EvaluateVO evaluateVO2 = ttsService.evaluateTest("src/main/resources/hello.wav", "你好");
+        System.out.println(evaluateVO2.getStars());
     }
 }

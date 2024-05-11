@@ -2,6 +2,8 @@ package me.zhangjh.sing.canto.response;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * @author njhxzhangjihong@126.com
  * @date 18:06 2024/5/10
@@ -22,12 +24,16 @@ public class EvaluateVO {
     // 完整度
     private Double complete;
 
+    private List<WordEvaluateVO> wordEvaluates;
+
     public String getStars() {
-        if(pronScore == null || pronScore < 0 || pronScore > 100) {
-            return null;
+        double score = 0d;
+        for (WordEvaluateVO wordEvaluate : wordEvaluates) {
+            score += wordEvaluate.getAccuracy();
         }
         String[] stars = {"1", "2", "3", "4", "5"};
-        int index = (int) Math.ceil(pronScore / 20.0f) - 1;
+        double average = (score / (wordEvaluates.size() * 100));
+        int index = (int) Math.floor(average / 0.2d) - 1;
         return stars[index];
     }
 }
