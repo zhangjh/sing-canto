@@ -12,7 +12,7 @@ public class QueryRequest {
 
     private String singer;
 
-    private int gender;
+    private Integer gender;
 
     private String song;
 

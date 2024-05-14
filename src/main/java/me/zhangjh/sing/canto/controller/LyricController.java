@@ -15,8 +15,6 @@ import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-
 /**
  * @author njhxzhangjihong@126.com
  * @date 14:36 2024/5/11
@@ -32,20 +30,25 @@ public class LyricController {
     @Autowired
     private TtsService ttsService;
 
-    @GetMapping("/lyric/search/")
-    public Response<List<String>> searchLyric(@RequestParam String song,
-                                             @RequestParam String singer) {
-        // todo: 根据歌名和歌手查询歌词，转换为切分后的内容返回
-        return null;
-    }
-
     @GetMapping("/lyric/query")
-    public PageResponse<TblLyric> queryLyric(@RequestParam QueryRequest request) {
+    public PageResponse<TblLyric> queryLyric(@RequestBody(required = false) QueryRequest request) {
         QueryWrapper<TblLyric> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("song", request.getSong());
-        queryWrapper.eq("singer", request.getSinger());
-        queryWrapper.eq("gender", request.getGender());
-        Page<TblLyric> page = new Page<>(request.getPageIndex(), request.getPageSize());
+        int pageIndex = 1;
+        int pageSize = 10;
+        if(request != null) {
+            if(StringUtils.isNotEmpty(request.getSong())) {
+                queryWrapper.eq("song", request.getSong());
+            }
+            if(StringUtils.isNotEmpty(request.getSinger())) {
+                queryWrapper.eq("singer", request.getSinger());
+            }
+            if(request.getGender() != null) {
+                queryWrapper.eq("gender", request.getGender());
+            }
+            pageIndex = request.getPageIndex();
+            pageSize = request.getPageSize();
+        }
+        Page<TblLyric> page = new Page<>(pageIndex, pageSize);
         Page<TblLyric> lyricPage = tblLyricsService.page(page, queryWrapper);
         return PageResponse.success(lyricPage.getRecords(), lyricPage.getTotal());
     }

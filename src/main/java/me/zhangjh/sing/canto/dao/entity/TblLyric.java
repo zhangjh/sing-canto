@@ -1,8 +1,7 @@
 package me.zhangjh.sing.canto.dao.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-
-import java.util.List;
 
 /**
  * @author njhxzhangjihong@126.com
@@ -10,7 +9,8 @@ import java.util.List;
  * @Description
  */
 @Data
-public class TblLyric {
+@TableName("tbl_lyrics")
+public class TblLyric extends BaseEntity {
 
     // 歌名
     private String song;
@@ -18,12 +18,12 @@ public class TblLyric {
     // 歌手
     private String singer;
 
-    // 歌曲配图
-    private String pic;
+    // 性别: 0-男，1-女
+    private int gender;
+
+    // 封面图
+    private String cover;
 
     // 歌词，原始未断句切分的
-    private String oriLyric;
-
-    // 歌词，已断句切分，每句不超过20字
-    private List<String> lyrics;
+    private String lyrics;
 }
