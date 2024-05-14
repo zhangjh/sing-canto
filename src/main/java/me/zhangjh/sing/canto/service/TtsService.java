@@ -6,9 +6,14 @@ import com.microsoft.cognitiveservices.speech.audio.AudioConfig;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import me.zhangjh.sing.canto.response.*;
+import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -35,9 +40,10 @@ public class TtsService {
     @Value("${MALE_SPEECH_VOICE_NAME}")
     private String maleSpeechVoiceName;
 
-    private static SpeechConfig speechConfig;
+    @Value("${temp.dir}")
+    private String tempDir;
 
-    private static AudioConfig audioConfig;
+    private static SpeechConfig speechConfig;
 
     /**
      * 用来生成语音
@@ -57,7 +63,7 @@ public class TtsService {
         Connection connection = Connection.fromSpeechSynthesizer(ttsSynthesizer);
         connection.openConnection(true);
 
-        audioConfig = AudioConfig.fromDefaultSpeakerOutput();
+        AudioConfig audioConfig = AudioConfig.fromDefaultSpeakerOutput();
         speechRecognizer = new SpeechRecognizer(
                 speechConfig,
                 audioConfig);
@@ -92,12 +98,56 @@ public class TtsService {
     public EvaluateVO evaluate(String referText) {
         return doEvaluate(referText);
     }
-    public EvaluateVO evaluateTest(String filePath, String referText) {
+    public EvaluateVO evaluateFile(String filePath, String referText) {
         AudioConfig audioConfig = AudioConfig.fromWavFileInput(filePath);
         speechRecognizer = new SpeechRecognizer(
                 speechConfig,
                 audioConfig);
         return doEvaluate(referText);
+    }
+
+    public EvaluateVO evaluateFile(MultipartFile file, String referText) {
+        File aacFile = null;
+        File wavFile = null;
+        try {
+            String fileName = String.valueOf(System.currentTimeMillis());
+            aacFile = File.createTempFile(tempDir + fileName, ".aac");
+            file.transferTo(aacFile);
+            if (!aacFile.canRead()) {
+                throw new RuntimeException("File cannot be read");
+            }
+            wavFile = transferAudioType(fileName, aacFile);
+            return evaluateFile(wavFile.getAbsolutePath(), referText);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (wavFile != null && wavFile.exists()) {
+                try {
+                    FileUtils.forceDelete(wavFile);
+                    FileUtils.forceDelete(aacFile);
+                } catch (IOException e) {
+                    // Logging the error to ensure the file deletion issue is noticed but not throwing an exception
+                    log.error("Failed to delete temp file: {}", wavFile.getAbsolutePath());
+                }
+            }
+        }
+    }
+
+    public File transferAudioType(String fileName, File aacFile) {
+        try {
+            File wavFile = new File(tempDir + fileName + ".wav");
+            if(!wavFile.exists()) {
+                boolean newFile = wavFile.createNewFile();
+                Assert.isTrue(newFile, "创建临时文件失败");
+            }
+            ProcessBuilder pb = new ProcessBuilder("ffmpeg", "-i", aacFile.getAbsolutePath(), "-y",
+                    "-f", "wav", wavFile.getAbsolutePath());
+            pb.inheritIO().start().waitFor();
+
+            return wavFile;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private EvaluateVO doEvaluate(String referText) {
