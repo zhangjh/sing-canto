@@ -77,7 +77,7 @@ public class TtsService {
     public void playContent(String text, String rate) {
         String ssml = "<speak version='1.0' " +
                 "xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='zh-CN'>" +
-                "<voice name='yue-CN-YunSongNeural'>" +
+                "<voice name='" + maleSpeechVoiceName + "'>" +
                 "<prosody rate='" + rate + "'>" +
                 text +
                 "</prosody>" +
@@ -163,6 +163,10 @@ public class TtsService {
 
                 PronunciationAssessmentResult pronResult =
                         PronunciationAssessmentResult.fromResult(speechRecognitionResult);
+
+                if(pronResult == null) {
+                    return new EvaluateVO();
+                }
 
                 String pronunciationAssessmentResultJson = speechRecognitionResult.getProperties()
                         .getProperty(PropertyId.SpeechServiceResponse_JsonResult);

@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import me.zhangjh.share.response.PageResponse;
 import me.zhangjh.share.response.Response;
-import me.zhangjh.sing.canto.controller.request.QueryRequest;
 import me.zhangjh.sing.canto.dao.entity.TblLyric;
 import me.zhangjh.sing.canto.response.EvaluateVO;
 import me.zhangjh.sing.canto.service.ITblLyricsService;
@@ -31,23 +30,23 @@ public class LyricController {
     private TtsService ttsService;
 
     @GetMapping("/lyric/query")
-    public PageResponse<TblLyric> queryLyric(@RequestBody(required = false) QueryRequest request) {
+    public PageResponse<TblLyric> queryLyric(@RequestParam(required = false) String song,
+                                             @RequestParam(required = false) String singer,
+                                             @RequestParam(required = false) Integer gender) {
         QueryWrapper<TblLyric> queryWrapper = new QueryWrapper<>();
         int pageIndex = 1;
         int pageSize = 10;
-        if(request != null) {
-            if(StringUtils.isNotEmpty(request.getSong())) {
-                queryWrapper.eq("song", request.getSong());
-            }
-            if(StringUtils.isNotEmpty(request.getSinger())) {
-                queryWrapper.eq("singer", request.getSinger());
-            }
-            if(request.getGender() != null) {
-                queryWrapper.eq("gender", request.getGender());
-            }
-            pageIndex = request.getPageIndex();
-            pageSize = request.getPageSize();
+
+        if(StringUtils.isNotEmpty(song)) {
+            queryWrapper.eq("song", song);
         }
+        if(StringUtils.isNotEmpty(singer)) {
+            queryWrapper.eq("singer", singer);
+        }
+        if(gender != null) {
+            queryWrapper.eq("gender", gender);
+        }
+
         Page<TblLyric> page = new Page<>(pageIndex, pageSize);
         Page<TblLyric> lyricPage = tblLyricsService.page(page, queryWrapper);
         return PageResponse.success(lyricPage.getRecords(), lyricPage.getTotal());
@@ -57,7 +56,7 @@ public class LyricController {
     public Response<Void> playVoice(@RequestParam String text,
                                     @RequestParam(required = false) String rate) {
         if(StringUtils.isEmpty(rate)) {
-            rate = "medium";
+            rate = "slow";
         }
         ttsService.playContent(text, rate);
         return Response.success(null);

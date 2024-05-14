@@ -2,6 +2,7 @@ package me.zhangjh.sing.canto.response;
 
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -24,7 +25,7 @@ public class EvaluateVO {
     // 完整度
     private Double complete;
 
-    private List<WordEvaluateVO> wordEvaluates;
+    private List<WordEvaluateVO> wordEvaluates = new ArrayList<>();
 
     public String getStars() {
         double score = 0d;
@@ -34,6 +35,9 @@ public class EvaluateVO {
         String[] stars = {"1", "2", "3", "4", "5"};
         double average = (score / (wordEvaluates.size() * 100));
         int index = (int) Math.floor(average / 0.2d) - 1;
+        if(index < 0) {
+            index = 0;
+        }
         return stars[index];
     }
 }
