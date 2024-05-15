@@ -207,9 +207,6 @@ public class TtsService {
         } catch (Exception e) {
             log.error("doEvaluate exception: ", e);
             throw new RuntimeException(e);
-        } finally {
-            speechRecognizer.close();
-            ttsSynthesizer.close();
         }
     }
 }

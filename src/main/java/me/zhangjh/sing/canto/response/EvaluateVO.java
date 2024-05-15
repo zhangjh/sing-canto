@@ -36,7 +36,7 @@ public class EvaluateVO {
         double average = (score / (wordEvaluates.size() * 100));
         int index = (int) Math.floor(average / 0.2d) - 1;
         if(index < 0) {
-            index = 0;
+            return "0";
         }
         return stars[index];
     }
