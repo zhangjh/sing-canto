@@ -25,6 +25,12 @@
             <groupId>me.zhangjh</groupId>
             <artifactId>share</artifactId>
             <version>2.0.10</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-logging</artifactId>
+                    <groupId>commons-logging</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
