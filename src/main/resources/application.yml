@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: sing-canto
+  # mybatis plus
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: root_123456
+    url: jdbc:mysql://127.0.0.1:3306/sing_canto?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+      table-prefix: tbl_
+
+SPEECH_KEY:
+
+SPEECH_REGION:
+  eastasia
+FEMALE_SPEECH_VOICE_NAME:
+  yue-CN-XiaoMinNeural
+MALE_SPEECH_VOICE_NAME:
+  yue-CN-YunSongNeural
+
+wx:
+  appId:
+  appSecret:
+  hanzi:
+    appId:
+    appSecret:
+
+
+## temp file dir
+temp:
+  dir: /Users/zhangjh/Desktop/tmp/

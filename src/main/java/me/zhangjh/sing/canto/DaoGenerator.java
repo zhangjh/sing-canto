@@ -49,7 +49,7 @@ public class DaoGenerator {
 //                        .addInclude("tbl_material_model_mapping")
 //                        .addInclude("tbl_model")
 //                        .addInclude("tbl_train_material")
-                        .addInclude("tbl_lyrics"))
+                        .addInclude("tbl_practiced"))
                 .templateEngine(new FreemarkerTemplateEngine())
                 .execute();
     }

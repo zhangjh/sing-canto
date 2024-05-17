@@ -3,6 +3,7 @@ package me.zhangjh.sing.canto.conf;
 import com.baomidou.mybatisplus.autoconfigure.DdlApplicationRunner;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +16,8 @@ import java.util.List;
  * @Description
  */
 @Configuration
+@MapperScan(basePackages = {"me.zhangjh.sing.canto.dao.mapper",
+        "me.zhangjh.share.user.service.mapper"})
 public class GlobalConfig {
 
     // 配置MybatisPlus的分页插件
