@@ -15,6 +15,7 @@ import me.zhangjh.sing.canto.service.TtsService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -89,6 +90,9 @@ public class LyricController {
         Page<TblPracticed> practicedPage = tblPracticedService.page(page, new QueryWrapper<TblPracticed>().eq("user", userId));
         List<PracticedVO> practicedVOS = new ArrayList<>();
         List<Long> songIds = practicedPage.getRecords().stream().map(TblPracticed::getSongId).toList();
+        if(CollectionUtils.isEmpty(songIds)) {
+            return PageResponse.success(practicedVOS, 0L);
+        }
         List<TblLyric> tblLyrics = tblLyricsService.listByIds(songIds);
         for (TblLyric tblLyric : tblLyrics) {
             PracticedVO practicedVO = new PracticedVO();
