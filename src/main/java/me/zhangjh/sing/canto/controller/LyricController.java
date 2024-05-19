@@ -1,19 +1,28 @@
 package me.zhangjh.sing.canto.controller;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import me.zhangjh.share.response.PageResponse;
 import me.zhangjh.share.response.Response;
+import me.zhangjh.share.util.HttpClientUtil;
+import me.zhangjh.share.util.HttpRequest;
 import me.zhangjh.sing.canto.dao.entity.TblLyric;
 import me.zhangjh.sing.canto.dao.entity.TblPracticed;
 import me.zhangjh.sing.canto.response.EvaluateVO;
 import me.zhangjh.sing.canto.response.PracticedVO;
+import me.zhangjh.sing.canto.response.SearchLyricVO;
+import me.zhangjh.sing.canto.response.music.*;
 import me.zhangjh.sing.canto.service.ITblLyricsService;
 import me.zhangjh.sing.canto.service.ITblPracticedService;
 import me.zhangjh.sing.canto.service.TtsService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +30,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static javax.swing.UIManager.get;
 
 /**
  * @author njhxzhangjihong@126.com
@@ -31,6 +44,9 @@ import java.util.List;
 @RequestMapping("/canto/")
 @Slf4j
 public class LyricController {
+
+    @Value("${music.api.pre}")
+    private String musicApiPre;
 
     @Autowired
     private ITblLyricsService tblLyricsService;
@@ -128,5 +144,64 @@ public class LyricController {
         Assert.isTrue(StringUtils.isNotEmpty(text), "参考文本为空");
         EvaluateVO evaluateVO = ttsService.evaluateFile(file, text);
         return Response.success(evaluateVO);
+    }
+
+    @GetMapping("/lyric/search")
+    public Response<SearchLyricVO> searchLyric(@RequestParam String keyword) {
+        Assert.isTrue(StringUtils.isNotEmpty(keyword), "搜索关键字为空");
+        Object res = HttpClientUtil.get(musicApiPre + "/search?keywords=" + keyword);
+        SearchSongRes searchSongRes = JSONObject.parseObject((String) res, SearchSongRes.class);
+        if(searchSongRes == null) {
+            return Response.success(null);
+        }
+        List<SearchSong> songs = searchSongRes.getResult().getSongs();
+        if(CollectionUtils.isEmpty(songs)) {
+            return Response.success(null);
+        }
+        SearchSong song = songs.get(0);
+        String id = song.getId();
+
+        Object detail = HttpClientUtil.get(musicApiPre + "/song/detail?ids=" + id);
+        JSONObject jsonObject = JSONObject.parseObject((String) detail);
+        if(jsonObject == null) {
+            return null;
+        }
+        String songsJson = jsonObject.getString("songs");
+        JSONArray songArr = JSON.parseArray(songsJson);
+        String al = ((JSONObject) songArr.get(0)).getString("al");
+        JSONObject alJson = JSONObject.parseObject(al);
+        String name = alJson.getString("name");
+        String cover = alJson.getString("picUrl");
+        Artist artist = song.getArtists().get(0);
+        String singer = artist.getName();
+
+        Object lyricRes = HttpClientUtil.get(musicApiPre + "/lyric?id=" + id);
+        SearchLyricRes searchLyricRes = JSONObject.parseObject((String) lyricRes, SearchLyricRes.class);
+        if(searchLyricRes == null) {
+            return Response.success(null);
+        }
+        SearchLyric lyc = searchLyricRes.getLrc();
+        String handleLyricContent = handleLyricContent(lyc.getLyric());
+        SearchLyricVO searchLyricVO = new SearchLyricVO();
+        searchLyricVO.setSong(name);
+        searchLyricVO.setSinger(singer);
+        searchLyricVO.setCover(cover);
+        searchLyricVO.setLyric(handleLyricContent.substring(0, 100) + "...");
+        return Response.success(searchLyricVO);
+    }
+
+    private String handleLyricContent(String lyric) {
+        // 定义正则表达式模式来匹配时间戳
+        String regex = "\\[.*?\\]";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(lyric);
+
+        // 用空字符串替换所有匹配的时间戳
+        String cleanedLyrics = matcher.replaceAll("");
+
+        // 移除多余的空行
+        cleanedLyrics = cleanedLyrics.replaceAll("(?m)^[ \t]*\r?\n", "");
+
+        return cleanedLyrics;
     }
 }
