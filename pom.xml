@@ -24,7 +24,7 @@
         <dependency>
             <groupId>me.zhangjh</groupId>
             <artifactId>share</artifactId>
-            <version>2.0.10</version>
+            <version>2.0.11</version>
             <exclusions>
                 <exclusion>
                     <artifactId>commons-logging</artifactId>
@@ -86,6 +86,11 @@
             <groupId>org.bytedeco</groupId>
             <artifactId>javacv-platform</artifactId>
             <version>1.5.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>1.9.7</version>
         </dependency>
     </dependencies>
 
