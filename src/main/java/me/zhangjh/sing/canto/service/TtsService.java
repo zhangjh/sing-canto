@@ -63,10 +63,6 @@ public class TtsService {
         Connection connection = Connection.fromSpeechSynthesizer(ttsSynthesizer);
         connection.openConnection(true);
 
-        AudioConfig audioConfig = AudioConfig.fromDefaultSpeakerOutput();
-        speechRecognizer = new SpeechRecognizer(
-                speechConfig,
-                audioConfig);
     }
 
     @PostConstruct
