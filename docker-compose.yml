@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - ~/mysql/data:/var/lib/mysql
+      - ~/mysql/conf:/etc/mysql/conf.d
+    environment:
+      MYSQL_ROOT_PASSWORD: root_123456
+      MYSQL_DATABASE: sing_canto
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: 12345678

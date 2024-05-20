@@ -1,5 +1,5 @@
 drop database if exists sing_canto;
-create database sing_canto default character set utf8mb4;
+create database sing_canto character set utf8mb4;
 
 use sing_canto;
 
