@@ -1,3 +1,4 @@
+/*!40101 SET NAMES utf8 */;
 
 use sing_canto;
 
