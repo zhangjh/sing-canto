@@ -12,7 +12,7 @@ create table tbl_practiced
     `song_id`    bigint(64) not null comment '歌曲id',
     `user`      varchar(100) not null comment '用户',
     primary key (id)
-) comment = '歌词';
+) character set utf8mb4 collate utf8mb4_unicode_ci comment = '歌词';
 
 create index idx_user_song on tbl_practiced (user, song_id);
 

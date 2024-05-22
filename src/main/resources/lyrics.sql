@@ -1,5 +1,5 @@
 drop database if exists sing_canto;
-create database sing_canto character set utf8mb4;
+create database sing_canto character set utf8mb4 collate utf8mb4_unicode_ci;
 
 use sing_canto;
 
@@ -17,7 +17,7 @@ create table tbl_lyrics
     `cover`     varchar(255) null default 'https://img.zcool.cn/community/01896b597ac380a8012193a3db4f2d.png' comment '封面',
     `lyrics`      text         not null comment '歌词',
     primary key (id)
-) comment = '歌词';
+) character set utf8mb4 collate utf8mb4_unicode_ci comment = '歌词';
 
 create index idx_song_singer on tbl_lyrics (song, singer);
 
