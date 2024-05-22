@@ -7,10 +7,13 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ~/mysql/data:/var/lib/mysql
-      - ~/mysql/conf:/etc/mysql/conf.d
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/conf:/etc/mysql/conf.d
     environment:
       MYSQL_ROOT_PASSWORD: root_123456
       MYSQL_DATABASE: sing_canto
       MYSQL_USER: admin
       MYSQL_PASSWORD: 12345678
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
