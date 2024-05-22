@@ -10,6 +10,8 @@ services:
       - ./mysql/data:/var/lib/mysql
       - ./mysql/conf:/etc/mysql/conf.d
     environment:
+      TZ: Asia/Shanghai
+      LANG: C.UTF-8
       MYSQL_ROOT_PASSWORD: root_123456
       MYSQL_DATABASE: sing_canto
       MYSQL_USER: admin
