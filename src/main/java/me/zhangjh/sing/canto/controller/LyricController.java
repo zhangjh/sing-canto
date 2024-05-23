@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -147,47 +148,52 @@ public class LyricController {
     }
 
     @GetMapping("/lyric/search")
-    public Response<SearchLyricVO> searchLyric(@RequestParam String keyword) {
+    public Response<List<SearchLyricVO>> searchLyric(@RequestParam String keyword) {
         Assert.isTrue(StringUtils.isNotEmpty(keyword), "搜索关键字为空");
-        Object res = HttpClientUtil.get(musicApiPre + "/search?keywords=" + keyword);
-        SearchSongRes searchSongRes = JSONObject.parseObject((String) res, SearchSongRes.class);
+        List<SearchLyricVO> searchLyricVOS = new ArrayList<>();
+        Object object = HttpClientUtil.get(musicApiPre + "/search?key=" + keyword);
+        JSONObject res = JSONObject.parseObject(object.toString());
+        Integer result = res.getInteger("result");
+        if(result != 100) {
+            return Response.success(searchLyricVOS);
+        }
+        String data = res.getString("data");
+        if(StringUtils.isEmpty(data)) {
+            return Response.success(searchLyricVOS);
+        }
+        SearchSongRes searchSongRes = JSONObject.parseObject(data, SearchSongRes.class);
         if(searchSongRes == null) {
             return Response.success(null);
         }
-        List<SearchSong> songs = searchSongRes.getResult().getSongs();
+        List<SearchSong> songs = searchSongRes.getList();
         if(CollectionUtils.isEmpty(songs)) {
             return Response.success(null);
         }
-        SearchSong song = songs.get(0);
-        String id = song.getId();
-
-        Object detail = HttpClientUtil.get(musicApiPre + "/song/detail?ids=" + id);
-        JSONObject jsonObject = JSONObject.parseObject((String) detail);
-        if(jsonObject == null) {
-            return null;
+        int len = songs.size();
+        if(len > 3) {
+            len = 3;
         }
-        String songsJson = jsonObject.getString("songs");
-        JSONArray songArr = JSON.parseArray(songsJson);
-        String al = ((JSONObject) songArr.get(0)).getString("al");
-        JSONObject alJson = JSONObject.parseObject(al);
-        String name = alJson.getString("name");
-        String cover = alJson.getString("picUrl");
-        Artist artist = song.getArtists().get(0);
-        String singer = artist.getName();
-
-        Object lyricRes = HttpClientUtil.get(musicApiPre + "/lyric?id=" + id);
-        SearchLyricRes searchLyricRes = JSONObject.parseObject((String) lyricRes, SearchLyricRes.class);
-        if(searchLyricRes == null) {
-            return Response.success(null);
+        for (int i = 0; i < len; i++) {
+            SearchSong song = songs.get(i);
+            String songMid = song.getSongmid();
+            String str = HttpClientUtil.get(musicApiPre + "/lyric?songmid=" + songMid).toString();
+            res = JSONObject.parseObject(str);
+            if(res.getInteger("result") != 100) {
+                continue;
+            }
+            data = res.getString("data");
+            SearchLyric searchLyric = JSONObject.parseObject(data, SearchLyric.class);
+            String lyric = searchLyric.getLyric();
+            String handleLyricContent = handleLyricContent(lyric);
+            int length = handleLyricContent.length();
+            int cutLength = Math.min(length, 100);
+            SearchLyricVO searchLyricVO = new SearchLyricVO();
+            searchLyricVO.setLyric(handleLyricContent.substring(0, cutLength) + "...");
+            searchLyricVO.setSinger(song.getSinger().get(0).getName());
+            searchLyricVO.setSong(song.getName());
+            searchLyricVOS.add(searchLyricVO);
         }
-        SearchLyric lyc = searchLyricRes.getLrc();
-        String handleLyricContent = handleLyricContent(lyc.getLyric());
-        SearchLyricVO searchLyricVO = new SearchLyricVO();
-        searchLyricVO.setSong(name);
-        searchLyricVO.setSinger(singer);
-        searchLyricVO.setCover(cover);
-        searchLyricVO.setLyric(handleLyricContent.substring(0, 100) + "...");
-        return Response.success(searchLyricVO);
+        return Response.success(searchLyricVOS);
     }
 
     private String handleLyricContent(String lyric) {

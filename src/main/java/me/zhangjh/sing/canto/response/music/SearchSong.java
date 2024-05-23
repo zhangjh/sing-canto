@@ -12,9 +12,10 @@ import java.util.List;
 @Data
 public class SearchSong {
 
-    private String id;
-
+    private List<Singer> singer;
     private String name;
+    private String songmid;
+    private String songname;
+    private String albumname;
 
-    private List<Artist> artists;
 }

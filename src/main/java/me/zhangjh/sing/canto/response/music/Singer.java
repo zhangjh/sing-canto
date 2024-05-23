@@ -4,15 +4,14 @@ import lombok.Data;
 
 /**
  * @author njhxzhangjihong@126.com
- * @date 10:29 2024/5/19
+ * @date 09:44 2024/5/23
  * @Description
  */
 @Data
-public class Artist {
+public class Singer {
 
-    private String id;
-
+    private Integer id;
+    private String mid;
+    // 歌手名
     private String name;
-
-    private String img1v1Url;
 }

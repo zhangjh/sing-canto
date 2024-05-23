@@ -10,7 +10,5 @@ import lombok.Data;
 @Data
 public class SearchLyric {
 
-    private Integer version;
-
     private String lyric;
 }
