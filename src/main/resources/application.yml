@@ -38,3 +38,10 @@ wx:
 ## temp file dir
 temp:
   dir: /Users/zhangjh/Desktop/tmp/
+
+music:
+  api:
+    pre: http://106.14.60.211:28883/api/v1
+cover:
+  api:
+    pre: https://api.lrc.cx/api/v1

@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import me.zhangjh.share.response.PageResponse;
 import me.zhangjh.share.response.Response;
@@ -19,6 +20,8 @@ import me.zhangjh.sing.canto.response.music.*;
 import me.zhangjh.sing.canto.service.ITblLyricsService;
 import me.zhangjh.sing.canto.service.ITblPracticedService;
 import me.zhangjh.sing.canto.service.TtsService;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,9 +31,9 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,6 +51,9 @@ public class LyricController {
 
     @Value("${music.api.pre}")
     private String musicApiPre;
+
+    @Value("${cover.api.pre}")
+    private String coverApiPre;
 
     @Autowired
     private ITblLyricsService tblLyricsService;
@@ -147,53 +153,51 @@ public class LyricController {
         return Response.success(evaluateVO);
     }
 
+    @SneakyThrows
     @GetMapping("/lyric/search")
-    public Response<List<SearchLyricVO>> searchLyric(@RequestParam String keyword) {
-        Assert.isTrue(StringUtils.isNotEmpty(keyword), "搜索关键字为空");
-        List<SearchLyricVO> searchLyricVOS = new ArrayList<>();
-        Object object = HttpClientUtil.get(musicApiPre + "/search?key=" + keyword);
-        JSONObject res = JSONObject.parseObject(object.toString());
-        Integer result = res.getInteger("result");
-        if(result != 100) {
-            return Response.success(searchLyricVOS);
+    public Response<SearchLyricVO> searchLyric(@RequestParam String song,
+                                                     @RequestParam(required = false) String singer,
+                                                     @RequestParam(required = false) String album) {
+        // 查找歌词
+        String lyricUrl = musicApiPre + "/lyrics/single?title=" + song;
+        String coverUrl = coverApiPre + "/cover/album?title=" + song;
+        if(StringUtils.isNotEmpty(singer)) {
+            lyricUrl += "&artist=" + singer;
+            coverUrl += "&artist=" + singer;
         }
-        String data = res.getString("data");
-        if(StringUtils.isEmpty(data)) {
-            return Response.success(searchLyricVOS);
+        if(StringUtils.isNotEmpty(album)) {
+            lyricUrl += "&album=" + album;
+            coverUrl += "&album=" + album;
         }
-        SearchSongRes searchSongRes = JSONObject.parseObject(data, SearchSongRes.class);
-        if(searchSongRes == null) {
-            return Response.success(null);
-        }
-        List<SearchSong> songs = searchSongRes.getList();
-        if(CollectionUtils.isEmpty(songs)) {
-            return Response.success(null);
-        }
-        int len = songs.size();
-        if(len > 3) {
-            len = 3;
-        }
-        for (int i = 0; i < len; i++) {
-            SearchSong song = songs.get(i);
-            String songMid = song.getSongmid();
-            String str = HttpClientUtil.get(musicApiPre + "/lyric?songmid=" + songMid).toString();
-            res = JSONObject.parseObject(str);
-            if(res.getInteger("result") != 100) {
-                continue;
+        Object lyricObj = HttpClientUtil.get(lyricUrl);
+        String lyric = lyricObj.toString();
+        String handleLyricContent = handleLyricContent(lyric);
+        int length = handleLyricContent.length();
+        int cutLength = Math.min(length, 100);
+
+        // 查找封面
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .followRedirects(false)
+                .build();
+        Request request = new Request.Builder()
+                .url(coverUrl)
+                .build();
+        String cover = "";
+        try (okhttp3.Response response = okHttpClient.newCall(request).execute()) {
+            if (response.isRedirect()) {
+                // 获取重定向后的 URL
+                cover = response.header("Location");
+                System.out.println("Redirected URL: " + cover);
+            } else {
+                System.out.println("No redirection, response code: " + response.code());
             }
-            data = res.getString("data");
-            SearchLyric searchLyric = JSONObject.parseObject(data, SearchLyric.class);
-            String lyric = searchLyric.getLyric();
-            String handleLyricContent = handleLyricContent(lyric);
-            int length = handleLyricContent.length();
-            int cutLength = Math.min(length, 100);
-            SearchLyricVO searchLyricVO = new SearchLyricVO();
-            searchLyricVO.setLyric(handleLyricContent.substring(0, cutLength) + "...");
-            searchLyricVO.setSinger(song.getSinger().get(0).getName());
-            searchLyricVO.setSong(song.getName());
-            searchLyricVOS.add(searchLyricVO);
         }
-        return Response.success(searchLyricVOS);
+        SearchLyricVO searchLyricVO = new SearchLyricVO();
+        searchLyricVO.setSong(song);
+        searchLyricVO.setSinger(singer);
+        searchLyricVO.setLyric(handleLyricContent.substring(0, cutLength) + "...");
+        searchLyricVO.setCover(cover);
+        return Response.success(searchLyricVO);
     }
 
     private String handleLyricContent(String lyric) {
@@ -203,7 +207,7 @@ public class LyricController {
         Matcher matcher = pattern.matcher(lyric);
 
         // 用空字符串替换所有匹配的时间戳
-        String cleanedLyrics = matcher.replaceAll("");
+        String cleanedLyrics = matcher.replaceAll("\n");
 
         // 移除多余的空行
         cleanedLyrics = cleanedLyrics.replaceAll("(?m)^[ \t]*\r?\n", "");
