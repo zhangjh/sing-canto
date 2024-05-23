@@ -19,7 +19,7 @@ public class TblLyric extends BaseEntity {
     private String singer;
 
     // 性别: 0-男，1-女
-    private int gender;
+    private int gender = 0;
 
     // 封面图
     private String cover;

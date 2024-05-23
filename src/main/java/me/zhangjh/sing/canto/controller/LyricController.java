@@ -67,9 +67,12 @@ public class LyricController {
     @GetMapping("/lyric/query")
     public PageResponse<TblLyric> queryLyric(@RequestParam(required = false) String song,
                                              @RequestParam(required = false) String singer,
-                                             @RequestParam(required = false) Integer gender) {
+                                             @RequestParam(required = false) Integer gender,
+                                             @RequestParam(required = false) Integer pageIndex) {
         QueryWrapper<TblLyric> queryWrapper = new QueryWrapper<>();
-        int pageIndex = 1;
+        if(pageIndex == null) {
+            pageIndex = 1;
+        }
         int pageSize = 10;
 
         if(StringUtils.isNotEmpty(song)) {
@@ -85,6 +88,25 @@ public class LyricController {
         Page<TblLyric> page = new Page<>(pageIndex, pageSize);
         Page<TblLyric> lyricPage = tblLyricsService.page(page, queryWrapper);
         return PageResponse.success(lyricPage.getRecords(), lyricPage.getTotal());
+    }
+
+    @PostMapping("/lyric/save")
+    public Response<Void> saveLyric(@RequestBody TblLyric tblLyric) {
+        String song = tblLyric.getSong();
+        String singer = tblLyric.getSinger();
+        String cover = tblLyric.getCover();
+        // 给个默认封面
+        if(StringUtils.isEmpty(cover)) {
+            tblLyric.setCover("https://img.zcool.cn/community/01896b597ac380a8012193a3db4f2d.png");
+        }
+        TblLyric existed = tblLyricsService.getOne(new QueryWrapper<TblLyric>()
+                .eq("song", song).eq("singer", singer));
+        if(existed != null) {
+            log.info("existed, song: {}, singer: {}", song, singer);
+            return Response.success(null);
+        }
+        tblLyricsService.save(tblLyric);
+        return Response.success(null);
     }
 
     @PostMapping("/lyric/savePracticed")
@@ -153,7 +175,6 @@ public class LyricController {
         return Response.success(evaluateVO);
     }
 
-    @SneakyThrows
     @GetMapping("/lyric/search")
     public Response<SearchLyricVO> searchLyric(@RequestParam String song,
                                                      @RequestParam(required = false) String singer,
@@ -176,27 +197,16 @@ public class LyricController {
         int cutLength = Math.min(length, 100);
 
         // 查找封面
-        OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                .followRedirects(false)
-                .build();
-        Request request = new Request.Builder()
-                .url(coverUrl)
-                .build();
-        String cover = "";
-        try (okhttp3.Response response = okHttpClient.newCall(request).execute()) {
-            if (response.isRedirect()) {
-                // 获取重定向后的 URL
-                cover = response.header("Location");
-                System.out.println("Redirected URL: " + cover);
-            } else {
-                System.out.println("No redirection, response code: " + response.code());
-            }
-        }
+        Object coverObj = HttpClientUtil.get(coverUrl);
+        String cover = coverObj.toString();
+
         SearchLyricVO searchLyricVO = new SearchLyricVO();
         searchLyricVO.setSong(song);
         searchLyricVO.setSinger(singer);
         searchLyricVO.setLyric(handleLyricContent.substring(0, cutLength) + "...");
-        searchLyricVO.setCover(cover);
+        if(!StringUtils.equals(cover, "pic not found")) {
+            searchLyricVO.setCover(cover);
+        }
         return Response.success(searchLyricVO);
     }
 
