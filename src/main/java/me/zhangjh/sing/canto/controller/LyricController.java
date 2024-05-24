@@ -193,8 +193,8 @@ public class LyricController {
         Object lyricObj = HttpClientUtil.get(lyricUrl);
         String lyric = lyricObj.toString();
         String handleLyricContent = handleLyricContent(lyric);
-        int length = handleLyricContent.length();
-        int cutLength = Math.min(length, 100);
+//        int length = handleLyricContent.length();
+//        int cutLength = Math.min(length, 100);
 
         // 查找封面
         Object coverObj = HttpClientUtil.get(coverUrl);
@@ -203,7 +203,8 @@ public class LyricController {
         SearchLyricVO searchLyricVO = new SearchLyricVO();
         searchLyricVO.setSong(song);
         searchLyricVO.setSinger(singer);
-        searchLyricVO.setLyric(handleLyricContent.substring(0, cutLength) + "...");
+//        searchLyricVO.setLyric(handleLyricContent.substring(0, cutLength) + "...");
+        searchLyricVO.setLyric(handleLyricContent);
         if(!StringUtils.equals(cover, "pic not found")) {
             searchLyricVO.setCover(cover);
         }
