@@ -1,16 +1,12 @@
 package me.zhangjh.sing.canto.controller;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import me.zhangjh.share.response.PageResponse;
 import me.zhangjh.share.response.Response;
 import me.zhangjh.share.util.HttpClientUtil;
-import me.zhangjh.share.util.HttpRequest;
 import me.zhangjh.sing.canto.dao.entity.TblLyric;
 import me.zhangjh.sing.canto.dao.entity.TblPracticed;
 import me.zhangjh.sing.canto.response.EvaluateVO;
@@ -20,24 +16,18 @@ import me.zhangjh.sing.canto.response.music.*;
 import me.zhangjh.sing.canto.service.ITblLyricsService;
 import me.zhangjh.sing.canto.service.ITblPracticedService;
 import me.zhangjh.sing.canto.service.TtsService;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpMethod;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static javax.swing.UIManager.get;
 
 /**
  * @author njhxzhangjihong@126.com
@@ -52,8 +42,8 @@ public class LyricController {
     @Value("${music.api.pre}")
     private String musicApiPre;
 
-    @Value("${cover.api.pre}")
-    private String coverApiPre;
+    @Value("${music.api.condition}")
+    private String musicApiCondition;
 
     @Autowired
     private ITblLyricsService tblLyricsService;
@@ -180,34 +170,35 @@ public class LyricController {
                                                      @RequestParam(required = false) String singer,
                                                      @RequestParam(required = false) String album) {
         // 查找歌词
-        String lyricUrl = musicApiPre + "/lyrics/single?title=" + song;
-        String coverUrl = coverApiPre + "/cover/album?title=" + song;
+        String keyword = song;
         if(StringUtils.isNotEmpty(singer)) {
-            lyricUrl += "&artist=" + singer;
-            coverUrl += "&artist=" + singer;
+            keyword += singer;
         }
         if(StringUtils.isNotEmpty(album)) {
-            lyricUrl += "&album=" + album;
-            coverUrl += "&album=" + album;
+            keyword += album;
         }
-        Object lyricObj = HttpClientUtil.get(lyricUrl);
-        String lyric = lyricObj.toString();
-        String handleLyricContent = handleLyricContent(lyric);
-//        int length = handleLyricContent.length();
-//        int cutLength = Math.min(length, 100);
+        String searchUrl = musicApiPre + keyword + musicApiCondition;
+        String searchRes = HttpClientUtil.get(searchUrl).toString();
+        SearchSongRes searchSongRes = JSONObject.parseObject(searchRes, SearchSongRes.class);
+        Assert.isTrue(searchSongRes.getCode().contentEquals("000000"), "查询失败");
+        SongResultData songResultData = searchSongRes.getSongResultData();
+        List<SearchSong> searchSongs = songResultData.getResult();
+        Assert.isTrue(!CollectionUtils.isEmpty(searchSongs), "查询无结果");
+        SearchSong searchSong = searchSongs.get(0);
+        String songName = searchSong.getName();
+        List<Singer> singers = searchSong.getSingers();
+        String singerName = singers.get(0).getName();
+        String cover = searchSong.getImgItems().get(0).getImg();
+        String lyricUrl = searchSong.getLyricUrl();
+        String lyric = HttpClientUtil.get(lyricUrl).toString();
 
-        // 查找封面
-        Object coverObj = HttpClientUtil.get(coverUrl);
-        String cover = coverObj.toString();
+        String handleLyricContent = handleLyricContent(lyric);
 
         SearchLyricVO searchLyricVO = new SearchLyricVO();
-        searchLyricVO.setSong(song);
-        searchLyricVO.setSinger(singer);
-//        searchLyricVO.setLyric(handleLyricContent.substring(0, cutLength) + "...");
+        searchLyricVO.setSong(songName);
+        searchLyricVO.setSinger(singerName);
+        searchLyricVO.setCover(cover);
         searchLyricVO.setLyric(handleLyricContent);
-        if(!StringUtils.equals(cover, "pic not found")) {
-            searchLyricVO.setCover(cover);
-        }
         return Response.success(searchLyricVO);
     }
 
@@ -221,7 +212,8 @@ public class LyricController {
         String cleanedLyrics = matcher.replaceAll("\n");
 
         // 移除多余的空行
-        cleanedLyrics = cleanedLyrics.replaceAll("(?m)^[ \t]*\r?\n", "");
+        cleanedLyrics = cleanedLyrics.replaceAll("(?m)^[ \t]*\r?\n", "")
+                .replaceAll("\n", ",");
 
         return cleanedLyrics;
     }

@@ -6,16 +6,24 @@ import java.util.List;
 
 /**
  * @author njhxzhangjihong@126.com
- * @date 10:26 2024/5/19
+ * @date 15:33 2024/5/26
  * @Description
  */
 @Data
 public class SearchSong {
 
-    private List<Singer> singer;
+    private String id;
+
+    private String resourceType;
+
     private String name;
-    private String songmid;
-    private String songname;
-    private String albumname;
+
+    private List<Singer> singers;
+
+    private List<Album> albums;
+
+    private String lyricUrl;
+
+    private List<ImgItem> imgItems;
 
 }

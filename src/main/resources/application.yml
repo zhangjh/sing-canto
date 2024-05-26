@@ -5,7 +5,7 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: root_123456
+    password: Root_123456
     url: jdbc:mysql://127.0.0.1:3306/sing_canto?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
 
 mybatis-plus:
@@ -41,7 +41,5 @@ temp:
 
 music:
   api:
-    pre: http://106.14.60.211:28883/api/v1
-cover:
-  api:
-    pre: https://api.lrc.cx/api/v1
+    pre: https://pd.musicapp.migu.cn/MIGUM2.0/v1.0/content/search_all.do?text=
+    condition: '&searchSwitch={"song":1,"album":0,"singer":0,"tagSong":0,"mvSong":0,"songlist":0,"bestShow":0}'

@@ -4,15 +4,15 @@ import lombok.Data;
 
 /**
  * @author njhxzhangjihong@126.com
- * @date 10:32 2024/5/19
+ * @date 15:52 2024/5/26
  * @Description
  */
 @Data
-public class SearchSongRes {
+public class Album {
 
-   private SongResultData songResultData;
+    private String id;
 
-   private String code;
+    private String name;
+
+    private String type;
 }
-
-
