@@ -12,6 +12,9 @@ import lombok.Data;
 @TableName("tbl_lyrics")
 public class TblLyric extends BaseEntity {
 
+    // 创建人
+    private String creator;
+
     // 歌名
     private String song;
 
