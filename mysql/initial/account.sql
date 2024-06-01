@@ -1,3 +1,5 @@
+use sing_canto;
+
 DROP TABLE IF EXISTS tbl_account;
 CREATE TABLE tbl_account
 (
