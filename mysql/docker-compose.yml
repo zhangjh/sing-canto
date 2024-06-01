@@ -9,6 +9,7 @@ services:
     volumes:
       - ./mysql/data:/var/lib/mysql
       - ./mysql/conf:/etc/mysql/conf.d
+      - ./initial/:/docker-entrypoint-initdb.d/
     environment:
       TZ: Asia/Shanghai
       LANG: C.UTF-8

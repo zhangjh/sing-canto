@@ -6,7 +6,6 @@ create database sing_canto character set utf8mb4 collate utf8mb4_unicode_ci;
 use sing_canto;
 
 drop table if exists tbl_lyrics;
-
 create table tbl_lyrics
 (
     id            bigint(64) not null auto_increment comment '主键id',

@@ -3,7 +3,6 @@
 use sing_canto;
 
 drop table if exists tbl_practiced;
-
 create table tbl_practiced
 (
     id            bigint(64) not null auto_increment comment '主键id',
@@ -17,9 +16,9 @@ create table tbl_practiced
 
 create index idx_user_song on tbl_practiced (user, song_id);
 
-insert into tbl_practiced(song_id, user)
-    values (1,'zhangjh');
-insert into tbl_practiced(song_id, user)
-    values (2, 'zhangjh');
-insert into tbl_practiced(song_id, user)
-    values (3, 'zhangjh');
+# insert into tbl_practiced(song_id, user)
+#     values (1,'zhangjh');
+# insert into tbl_practiced(song_id, user)
+#     values (2, 'zhangjh');
+# insert into tbl_practiced(song_id, user)
+#     values (3, 'zhangjh');
