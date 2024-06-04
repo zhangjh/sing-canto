@@ -147,7 +147,7 @@ public class LyricController {
         if(StringUtils.isEmpty(rate)) {
             rate = "slow";
         }
-        ttsService.playContent(text, rate);
+        ttsService.playContentReturnStream(text, rate);
         return Response.success(null);
     }
 

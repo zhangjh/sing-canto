@@ -4,18 +4,28 @@ import com.alibaba.fastjson2.JSONObject;
 import com.microsoft.cognitiveservices.speech.*;
 import com.microsoft.cognitiveservices.speech.audio.AudioConfig;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import me.zhangjh.share.util.HttpClientUtil;
+import me.zhangjh.share.util.HttpRequest;
 import me.zhangjh.sing.canto.response.*;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -42,6 +52,9 @@ public class TtsService {
 
     @Value("${temp.dir}")
     private String tempDir;
+
+    @Autowired
+    private HttpServletResponse response;
 
     private static SpeechConfig speechConfig;
 
@@ -82,13 +95,57 @@ public class TtsService {
         SpeechSynthesisResult result = ttsSynthesizer.SpeakSsml(ssml);
         if (result.getReason() == ResultReason.SynthesizingAudioCompleted) {
             log.info("Speech synthesized for text: {}", text);
+            response.setContentType("audio/wav");
+            response.setHeader("Content-Disposition", "inline;");
+            try (OutputStream out = response.getOutputStream()){
+              out.write(result.getAudioData());
+              out.flush();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         } else if (result.getReason() == ResultReason.Canceled) {
             SpeechSynthesisCancellationDetails cancellation = SpeechSynthesisCancellationDetails.fromResult(result);
             log.info("CANCELED: SpeechSynthesis was canceled: Reason=" + cancellation.getReason());
             if (cancellation.getReason() == CancellationReason.Error) {
                 log.info("ErrorCode: {}, Error Details: {}", cancellation.getErrorCode(), cancellation.getErrorDetails());
             }
+            try {
+                response.sendError(500, "speech canceled:" + cancellation.getReason());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
+    }
+
+    public void playContentReturnStream(String text, String rate) {
+        String ssml = "<speak version='1.0' " +
+                "xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='zh-CN'>" +
+                "<voice name='" + maleSpeechVoiceName + "'>" +
+                "<prosody rate='" + rate + "'>" +
+                text +
+                "</prosody>" +
+                "</voice>" +
+                "</speak>";
+        String url = "https://eastasia.tts.speech.microsoft.com/cognitiveservices/v1";
+        String file = tempDir + System.currentTimeMillis() + ".wav";
+        HttpRequest httpRequest = new HttpRequest(url);
+        httpRequest.setMethod(HttpMethod.POST.name());
+        Map<String, String> bizHeader = new HashMap<>();
+        bizHeader.put("Ocp-Apim-Subscription-Key", speechKey);
+        bizHeader.put("Content-Type", "application/ssml+xml");
+        bizHeader.put("X-Microsoft-OutputFormat", "riff-24khz-16bit-mono-pcm");
+        bizHeader.put("User-Agent", "curl");
+        httpRequest.setBizHeaderMap(bizHeader);
+        httpRequest.setReqData(ssml);
+        HttpClientUtil.sendNormallyWithCb(httpRequest, (responseBody) -> {
+            try (OutputStream out = response.getOutputStream()){
+                out.write(responseBody.bytes());
+                out.flush();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            return null;
+        });
     }
 
     public EvaluateVO evaluate(String referText) {
