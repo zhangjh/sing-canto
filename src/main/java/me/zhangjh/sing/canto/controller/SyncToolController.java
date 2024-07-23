@@ -14,6 +14,7 @@ public class SyncToolController {
     @Autowired
     private SyncTool syncTool;
 
+    @RequestMapping("/sync")
     public void sync() {
         syncTool.syncUser();
         syncTool.syncLyric();
