@@ -74,7 +74,7 @@ public class SyncTool {
     public void syncLyric() {
         Wrapper<TblLyric> queryWrapper = new LambdaQueryWrapper<>();
         List<TblLyric> tblLyrics = tblLyricsMapper.selectList(queryWrapper);
-        String url = dbUrlPre + "/create?table=tbl_lyric";
+        String url = dbUrlPre + "/create?table=tbl_lyrics";
         for (TblLyric tblLyric : tblLyrics) {
             JSONObject data = new JSONObject();
             data.put("creator", tblLyric.getCreator());
