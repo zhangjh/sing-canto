@@ -17,7 +17,7 @@ public class SyncToolController {
     @RequestMapping("/sync")
     public void sync() {
         syncTool.syncUser();
-        syncTool.syncLyric();
-        syncTool.syncPracticed();
+//        syncTool.syncLyric();
+//        syncTool.syncPracticed();
     }
 }
