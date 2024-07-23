@@ -1,6 +1,7 @@
 package me.zhangjh.sing.canto;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,6 @@ import me.zhangjh.sing.canto.dao.mapper.TblPracticedMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,52 +51,67 @@ public class SyncTool {
         Wrapper<TblAccount> queryWrapper = new LambdaQueryWrapper<>();
         List<TblAccount> tblAccounts = wxAccountMapper.selectList(queryWrapper);
 
-        StringBuilder url = new StringBuilder(dbUrlPre + "/create?table=tbl_user");
+        String url = dbUrlPre + "/create?table=tbl_user";
         for (TblAccount tblAccount : tblAccounts) {
-            url.append("&user_id=").append(tblAccount.getId())
-                    .append("&ext_type=").append(tblAccount.getExtType())
-                    .append("&name=").append(tblAccount.getName())
-                    .append("&product_type=").append(tblAccount.getProductType())
-                    .append("&create_time=").append(tblAccount.getCreateTime())
-                    .append("&modify_time=").append(tblAccount.getModifyTime());
-            Object result = HttpClientUtil.get(url.toString(), HEADERS);
+            JSONObject data = new JSONObject();
+            data.put("ext_id", tblAccount.getExtId());
+            data.put("ext_type", tblAccount.getExtType());
+            data.put("name", tblAccount.getName());
+            data.put("product_type", tblAccount.getProductType());
+            data.put("create_time", tblAccount.getCreateTime());
+            data.put("modify_time", tblAccount.getModifyTime());
+            log.info("url: {}, data: {}", url, data);
+            HttpRequest request = new HttpRequest(url);
+            request.setMethod("POST");
+            request.setBizHeaderMap(HEADERS);
+            request.setReqData(JSON.toJSONString(data));
+            log.info("request: {}", request.getReqData());
+            Object result = HttpClientUtil.sendNormally(request);
             log.info("result: " + result);
-            url = new StringBuilder(dbUrlPre + "/create?table=tbl_user");
         }
     }
 
     public void syncLyric() {
         Wrapper<TblLyric> queryWrapper = new LambdaQueryWrapper<>();
         List<TblLyric> tblLyrics = tblLyricsMapper.selectList(queryWrapper);
-        StringBuilder url = new StringBuilder(dbUrlPre + "/create?table=tbl_lyric");
+        String url = dbUrlPre + "/create?table=tbl_lyric";
         for (TblLyric tblLyric : tblLyrics) {
-            url.append("&creator=").append(tblLyric.getCreator())
-                    .append("&gender=").append(tblLyric.getGender())
-                    .append("&song=").append(tblLyric.getSong())
-                    .append("&singer=").append(tblLyric.getSinger())
-                    .append("&cover=").append(tblLyric.getCover())
-                    .append("&lyrics=").append(tblLyric.getLyrics())
-                    .append("&create_time=").append(tblLyric.getCreateTime())
-                    .append("&modify_time=").append(tblLyric.getModifyTime());
-            Object result = HttpClientUtil.get(url.toString(), HEADERS);
+            JSONObject data = new JSONObject();
+            data.put("creator", tblLyric.getCreator());
+            data.put("gender", tblLyric.getGender());
+            data.put("song", tblLyric.getSong());
+            data.put("singer", tblLyric.getSinger());
+            data.put("cover", tblLyric.getCover());
+            data.put("lyrics", tblLyric.getLyrics());
+            data.put("create_time", tblLyric.getCreateTime());
+            data.put("modify_time", tblLyric.getModifyTime());
+            log.info("url: {}, data: {}", url, data);
+            HttpRequest request = new HttpRequest(url);
+            request.setMethod("POST");
+            request.setBizHeaderMap(HEADERS);
+            request.setReqData(JSON.toJSONString(data));
+            Object result = HttpClientUtil.sendNormally(request);
             log.info("result: " + result);
-            url = new StringBuilder(dbUrlPre + "/create?table=tbl_lyric");
         }
     }
 
     public void syncPracticed() {
         Wrapper<TblPracticed> queryWrapper = new LambdaQueryWrapper<>();
         List<TblPracticed> tblPracticeds = tblPracticedMapper.selectList(queryWrapper);
-        StringBuilder url = new StringBuilder(dbUrlPre + "/create?table=tbl_practiced");
+        String url = dbUrlPre + "/create?table=tbl_practiced";
         for (TblPracticed tblPracticed : tblPracticeds) {
-            url.append("&song_id=").append(tblPracticed.getSongId())
-                    .append("&user=").append(tblPracticed.getUser())
-                    .append("&create_time=").append(tblPracticed.getCreateTime())
-                    .append("&modify_time=").append(tblPracticed.getModifyTime());
+            JSONObject data = new JSONObject();
+            data.put("song_id", tblPracticed.getSongId());
+            data.put("user", tblPracticed.getUser());
+            data.put("create_time", tblPracticed.getCreateTime());
+            data.put("modify_time", tblPracticed.getModifyTime());
+            HttpRequest request = new HttpRequest(url);
+            request.setMethod("POST");
+            request.setBizHeaderMap(HEADERS);
+            request.setReqData(JSON.toJSONString(data));
 
-            Object result = HttpClientUtil.get(url.toString(), HEADERS);
+            Object result = HttpClientUtil.sendNormally(request);
             log.info("result: " + result);
-            url = new StringBuilder(dbUrlPre + "/create?table=tbl_practiced");
         }
     }
 }
