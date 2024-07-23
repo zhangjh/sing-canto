@@ -16,7 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -31,7 +33,13 @@ public class SyncTool {
     @Autowired
     private TblPracticedMapper tblPracticedMapper;
 
-    private static String dbUrlPre = "https://wx1.zhangjh.cn";
+    private static String dbUrlPre = "https://db.zhangjh.cn";
+
+    private static final Map<String, String> HEADERS = new HashMap<>();
+    {
+        HEADERS.put("token", "weirdSheep");
+    }
+
 //    @PostConstruct
 //    public void init() {
 //        syncUser();
@@ -43,30 +51,52 @@ public class SyncTool {
         Wrapper<TblAccount> queryWrapper = new LambdaQueryWrapper<>();
         List<TblAccount> tblAccounts = wxAccountMapper.selectList(queryWrapper);
 
-        String url = dbUrlPre + "/wx/saveWxUser";
-        HttpRequest httpRequest = new HttpRequest(url);
+        StringBuilder url = new StringBuilder(dbUrlPre + "/create?table=tbl_user");
         for (TblAccount tblAccount : tblAccounts) {
-            httpRequest.setMethod("POST");
-            JSONObject data = new JSONObject();
-            data.put("user_id", tblAccount.getId());
-            data.put("ext_type", tblAccount.getExtType());
-            data.put("name", tblAccount.getName());
-            data.put("product_type", tblAccount.getProductType());
-
-            httpRequest.setReqData(JSONObject.toJSONString(data));
-            Object result = HttpClientUtil.sendNormally(httpRequest);
+            url.append("&user_id=").append(tblAccount.getId())
+                    .append("&ext_type=").append(tblAccount.getExtType())
+                    .append("&name=").append(tblAccount.getName())
+                    .append("&product_type=").append(tblAccount.getProductType())
+                    .append("&create_time=").append(tblAccount.getCreateTime())
+                    .append("&modify_time=").append(tblAccount.getModifyTime());
+            Object result = HttpClientUtil.get(url.toString(), HEADERS);
             log.info("result: " + result);
+            url = new StringBuilder(dbUrlPre + "/create?table=tbl_user");
         }
     }
 
     public void syncLyric() {
         Wrapper<TblLyric> queryWrapper = new LambdaQueryWrapper<>();
         List<TblLyric> tblLyrics = tblLyricsMapper.selectList(queryWrapper);
+        StringBuilder url = new StringBuilder(dbUrlPre + "/create?table=tbl_lyric");
+        for (TblLyric tblLyric : tblLyrics) {
+            url.append("&creator=").append(tblLyric.getCreator())
+                    .append("&gender=").append(tblLyric.getGender())
+                    .append("&song=").append(tblLyric.getSong())
+                    .append("&singer=").append(tblLyric.getSinger())
+                    .append("&cover=").append(tblLyric.getCover())
+                    .append("&lyrics=").append(tblLyric.getLyrics())
+                    .append("&create_time=").append(tblLyric.getCreateTime())
+                    .append("&modify_time=").append(tblLyric.getModifyTime());
+            Object result = HttpClientUtil.get(url.toString(), HEADERS);
+            log.info("result: " + result);
+            url = new StringBuilder(dbUrlPre + "/create?table=tbl_lyric");
+        }
     }
 
     public void syncPracticed() {
         Wrapper<TblPracticed> queryWrapper = new LambdaQueryWrapper<>();
         List<TblPracticed> tblPracticeds = tblPracticedMapper.selectList(queryWrapper);
+        StringBuilder url = new StringBuilder(dbUrlPre + "/create?table=tbl_practiced");
+        for (TblPracticed tblPracticed : tblPracticeds) {
+            url.append("&song_id=").append(tblPracticed.getSongId())
+                    .append("&user=").append(tblPracticed.getUser())
+                    .append("&create_time=").append(tblPracticed.getCreateTime())
+                    .append("&modify_time=").append(tblPracticed.getModifyTime());
 
+            Object result = HttpClientUtil.get(url.toString(), HEADERS);
+            log.info("result: " + result);
+            url = new StringBuilder(dbUrlPre + "/create?table=tbl_practiced");
+        }
     }
 }

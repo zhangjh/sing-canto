@@ -16,5 +16,7 @@ public class SyncToolController {
 
     public void sync() {
         syncTool.syncUser();
+        syncTool.syncLyric();
+        syncTool.syncPracticed();
     }
 }
